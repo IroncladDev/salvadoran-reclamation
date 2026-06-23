@@ -3,7 +3,7 @@ import path from "path"
 import fs from "fs/promises"
 import typescriptPlugin from "@rollup/plugin-typescript"
 import { OutputAsset, OutputChunk } from "rollup"
-import { Input, InputAction, InputType, Packer } from "roadroller"
+import type { Input, InputAction, InputType } from "roadroller"
 import CleanCSS from "clean-css"
 import { statSync } from "fs"
 const { execFileSync } = require("child_process")
@@ -195,9 +195,12 @@ async function embedJs(html: string, chunk: OutputChunk): Promise<string> {
         options = { allowFreeVars: true }
     }
 
+    const { Packer } = (await import("roadroller")) as typeof import("roadroller")
     const packer = new Packer(inputs, options)
+    const distDir = path.join(__dirname, "dist")
+    await fs.mkdir(distDir, { recursive: true })
     await Promise.all([
-        fs.writeFile(`${path.join(__dirname, "dist")}/output.js`, htmlInJs),
+        fs.writeFile(path.join(distDir, "output.js"), htmlInJs),
         packer.optimize(process.env.LEVEL_2_BUILD ? 2 : 0), // Regular builds use level 2, but rr config builds use the supplied params
     ])
     const { firstLine, secondLine } = packer.makeDecoder()
